@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.4",
+  "version": "v1.1.5",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.4",
-      "digest": "sha256:82b8d80125a5cfd2a07f2e4cc248513fd6900c43e0783048d73bdefb566c8726"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.5",
+      "digest": "sha256:2b2fbb3b28cf2dfd501a6277f5d71f9660f5e0171a4902307f802d9af593f6b1"
     }
   },
-  "changelog": "v1.1.4：影视功能也进入一键部署任务链，支持已配置的 GPU 镜像并显示失败原因。"
+  "changelog": "v1.1.5：修正影视容器状态识别，部署完成后功能中心正确显示运行状态。"
 }
