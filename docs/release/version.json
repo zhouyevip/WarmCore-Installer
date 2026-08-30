@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.6",
+  "version": "v1.1.7",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.6",
-      "digest": "sha256:a4ff322be5cd25f7be3fb6b1ef34e93a2345c15d0a71a7eea46d4820d923f7ec"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.7",
+      "digest": "sha256:af23e83377a297d76fc09dce442137465ba383b7e2012b7cb72840681f91b8d5"
     }
   },
-  "changelog": "v1.1.6：影视部署先检查宿主机本地 GPU 镜像，存在时直接创建容器，避免错误访问公共仓库。"
+  "changelog": "v1.1.7：数字人与影视可同时安装，影视自动使用独立宿主机端口 50001。"
 }
