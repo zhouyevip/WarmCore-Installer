@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.2",
+  "version": "v1.1.3",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.2",
-      "digest": "sha256:8a6ae0959e6638f16505aece7c3fa8ed7cadbdf4a586fceaa47723441b1bf3ac"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.3",
+      "digest": "sha256:89d3ae3411e92ac4263be0faeca5b3229deec7893d470b4a5521e8b534f3e24d"
     }
   },
-  "changelog": "v1.1.2：后台服务器页新增立即更新按钮与更新日志；更新通过 Watchtower 拉取 GHCR 镜像并重建服务。"
+  "changelog": "v1.1.3：功能中心支持后台一键部署可选功能，实时显示拉取、创建和健康检查进度；管理员容器通过 Docker API 管理功能容器。"
 }

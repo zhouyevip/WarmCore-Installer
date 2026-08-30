@@ -67,6 +67,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - warmcore-app-data:/app/server_common/data
+      - /var/run/docker.sock:/var/run/docker.sock
       # 数字人形象列表（/api/dh/avatars 只读列目录）+ 自定义视频上传
       - ./data/digital-human/avatars:/app/data/digital-human/avatars:ro
       - ./data/digital-human/uploads:/app/data/digital-human/uploads
@@ -99,6 +100,8 @@ services:
       - WATCHTOWER_API_TOKEN=${WATCHTOWER_API_TOKEN:-warmcore-update}
     volumes:
       - warmcore-app-data:/app/server_common/data
+      # 部署代理通过 Docker Engine API 管理按需功能容器
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     depends_on:
       - mongo
