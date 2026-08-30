@@ -91,7 +91,7 @@ services:
       - SYNC_MAIN_URL=${CLOUD_URL:-}
       - WARMCORE_VERSION=${WARMCORE_VERSION:-latest}
       # 检查更新用的远端版本清单（默认 GitHub raw，可指向自建镜像源的副本）
-      - REMOTE_VERSION_URL=${REMOTE_VERSION_URL:-https://raw.githubusercontent.com/zhouyevip/WarmCore/main/docs/release/version.json}
+      - REMOTE_VERSION_URL=${REMOTE_VERSION_URL:-https://raw.githubusercontent.com/zhouyevip/WarmCore-Installer/main/docs/release/version.json}
       # 一键更新：watchtower 触发地址与令牌（compose 内部服务）
       - WATCHTOWER_URL=${WATCHTOWER_URL:-http://auto-update:8080}
       - WATCHTOWER_API_TOKEN=${WATCHTOWER_API_TOKEN:-warmcore-update}

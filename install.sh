@@ -2,7 +2,7 @@
 # WarmCore 私人服务器 · 一键安装脚本（镜像版）
 #
 # 用法（Linux / macOS / Git Bash）——先下载到本地，再执行（不推荐管道直接执行远程脚本）：
-#   curl -fsSL https://raw.githubusercontent.com/zhouyevip/WarmCore/main/install.sh -o install.sh
+#   curl -fsSL https://raw.githubusercontent.com/zhouyevip/WarmCore-Installer/main/install.sh -o install.sh
 #   bash install.sh
 #
 # 行为：
@@ -18,7 +18,7 @@
 #   DOWNLOAD_BASE      下载基址（默认 GitHub raw；国内可换加速前缀）
 set -euo pipefail
 
-REPO_RAW="${DOWNLOAD_BASE:-https://raw.githubusercontent.com/zhouyevip/WarmCore/main}"
+REPO_RAW="${DOWNLOAD_BASE:-https://raw.githubusercontent.com/zhouyevip/WarmCore-Installer/main}"
 COMPOSE_FILE="docker-compose.release.yml"
 CADDY_FILE="Caddyfile.private"
 
