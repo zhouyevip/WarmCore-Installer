@@ -30,6 +30,7 @@ if (-not (Test-Path $envFile)) {
   $watchToken = if ($env:WATCHTOWER_API_TOKEN) { $env:WATCHTOWER_API_TOKEN } else { New-Secret }
   @"
 WARMCORE_VERSION=latest
+COMPOSE_PROJECT_NAME=warmcore
 HUB_JWT_SECRET=$jwt
 CLOUD_URL=
 OLLAMA_BASE_URL=http://host.docker.internal:11434

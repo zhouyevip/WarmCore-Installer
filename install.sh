@@ -93,6 +93,7 @@ else
   cat > .env <<EOF
 # WarmCore 私有部署配置（由 install.sh 生成；密钥请勿外传）
 WARMCORE_VERSION=latest
+COMPOSE_PROJECT_NAME=warmcore
 # WARMCORE_REGISTRY=ghcr.io/zhouyevip   # 国内拉取慢时切换镜像源
 HUB_JWT_SECRET=$HUB_JWT_SECRET
 CLOUD_URL=$CLOUD_URL
