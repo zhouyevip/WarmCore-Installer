@@ -1,0 +1,286 @@
+# WarmCore 私有部署 · 镜像版 compose（用户安装入口）
+#
+# 与 docker-compose.private.yml（本机源码开发）的区别：
+#   - 全部服务拉取 ghcr.io 镜像，不含任何 build: 字段——镜像不可变，源码不落用户机器；
+#   - 不内置 ollama 服务：模型由用户自备（宿主机 ollama 或独立容器），
+#     通过 OLLAMA_BASE_URL 指向，本项目不承载模型分发；
+#   - 数据全部在 named volume 与 ./data 目录，升级镜像不丢数据；
+#   - 数字人：digital-human（生成服务）在 digital-human profile；
+#     jarvis 语音+口型 GPU 栈（进阶，需参考包镜像与数据包）在 digital-human-gpu profile。
+#
+# 推荐用 install.sh 一键安装；手工安装步骤见 docs/私有部署-镜像安装指南.md。
+#
+# 可调变量（写 .env）：
+#   WARMCORE_VERSION   镜像版本 tag（默认 latest；回滚=改成旧版本号后 pull）
+#   WARMCORE_REGISTRY  镜像源（默认 ghcr.io/zhouyevip；国内慢可切镜像源）
+#   HUB_JWT_SECRET     与云端一致的 JWT 密钥（install.sh 自动生成）
+#   CLOUD_URL          云端总管地址（绑定/同步目标，可留空纯本地跑）
+#   OLLAMA_BASE_URL    ollama 地址（默认宿主机 11434）
+
+services:
+  # ── 主服务（关系网/相册/贾维斯/影视代理 + 部署门户）──
+  app:
+    image: ${WARMCORE_REGISTRY:-ghcr.io/zhouyevip}/warmcore-server:${WARMCORE_VERSION:-latest}
+    container_name: warmcore-app
+    labels:
+      # 交给 auto-update（watchtower）在线更新
+      - com.centurylinklabs.watchtower.enable=true
+    expose:
+      - "8000"
+    environment:
+      - DEPLOY_MODE=private
+      # 部署门户二维码使用手机可达的宿主局域网地址，不能写 127.0.0.1
+      - PRIVATE_SERVER_ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-127.0.0.1}
+      - PRIVATE_SERVER_ADVERTISE_PORT=8080
+      - FAMILY_ID=fam_default
+      - FAMILY_NAME=${FAMILY_NAME:-我的家庭}
+      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_DB=warmcore
+      - CLOUD_URL=${CLOUD_URL:-}
+      - SYNC_MAIN_URL=${CLOUD_URL:-}
+      - HUB_JWT_SECRET=${HUB_JWT_SECRET:?请先运行 install.sh 生成 .env（缺少 HUB_JWT_SECRET）}
+      - HUB_URL=${HUB_URL:-}
+      # 模型不随镜像分发：ollama 由用户自备，此处只指地址
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - WARMCORE_VERSION=${WARMCORE_VERSION:-latest}
+      - MINIO_ENABLED=true
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-warmcore}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-warmcore-local}
+      - MINIO_BUCKET=warmcore
+      - MINIO_SECURE=false
+      - MINIO_PUBLIC_URL=/oss
+      - STORAGE_BACKEND=minio
+      # 数字人生成服务（GPU 机器/机器同网，可选；--profile digital-human 启用）
+      - DIGITAL_HUMAN_ENABLED=${DIGITAL_HUMAN_ENABLED:-0}
+      - DIGITAL_HUMAN_URL=${DIGITAL_HUMAN_URL:-}
+      - DIGITAL_HUMAN_TOKEN=${DIGITAL_HUMAN_TOKEN:-}
+      - HTTP_PROXY=${RUN_HTTP_PROXY:-}
+      - HTTPS_PROXY=${RUN_HTTPS_PROXY:-}
+      # 外网数字人媒体经云端专用隧道回到本地运行时，无需家庭路由器开放端口
+      - DH_MEDIA_LOCAL_HOST=${DH_MEDIA_LOCAL_HOST:-jarvis-digital-human}
+      - DH_MEDIA_LOCAL_PORT=50000
+    extra_hosts:
+      # Linux 上 host.docker.internal 需要显式映射到宿主机网关
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - warmcore-app-data:/app/server_common/data
+      # 数字人形象列表（/api/dh/avatars 只读列目录）+ 自定义视频上传
+      - ./data/digital-human/avatars:/app/data/digital-human/avatars:ro
+      - ./data/digital-human/uploads:/app/data/digital-human/uploads
+    restart: unless-stopped
+    depends_on:
+      - mongo
+
+  # ── 家庭后台 + 服务器管理（与主服务同镜像，仅启动命令不同）──
+  admin_server:
+    image: ${WARMCORE_REGISTRY:-ghcr.io/zhouyevip}/warmcore-server:${WARMCORE_VERSION:-latest}
+    container_name: warmcore-admin-server
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    command: python -m uvicorn server_local.admin_server.app:app --host 0.0.0.0 --port 8090
+    expose:
+      - "8090"
+    environment:
+      - DEPLOY_MODE=private
+      - FAMILY_ID=fam_default
+      - MONGO_URL=mongodb://mongo:27017
+      - MONGO_DB=warmcore
+      - HUB_JWT_SECRET=${HUB_JWT_SECRET:?请先运行 install.sh 生成 .env（缺少 HUB_JWT_SECRET）}
+      - CLOUD_URL=${CLOUD_URL:-}
+      - SYNC_MAIN_URL=${CLOUD_URL:-}
+      - WARMCORE_VERSION=${WARMCORE_VERSION:-latest}
+      # 检查更新用的远端版本清单（默认 GitHub raw，可指向自建镜像源的副本）
+      - REMOTE_VERSION_URL=${REMOTE_VERSION_URL:-https://raw.githubusercontent.com/zhouyevip/WarmCore/main/docs/release/version.json}
+      # 一键更新：watchtower 触发地址与令牌（compose 内部服务）
+      - WATCHTOWER_URL=${WATCHTOWER_URL:-http://auto-update:8080}
+      - WATCHTOWER_API_TOKEN=${WATCHTOWER_API_TOKEN:-warmcore-update}
+    volumes:
+      - warmcore-app-data:/app/server_common/data
+    restart: unless-stopped
+    depends_on:
+      - mongo
+
+  # ── 本地 MongoDB（隐私数据：AI 对话/相册/记忆 只存在这里）──
+  mongo:
+    image: docker.m.daocloud.io/library/mongo:7
+    container_name: warmcore-mongo
+    expose:
+      - "27017"
+    volumes:
+      - warmcore-mongo-data:/data/db
+    restart: unless-stopped
+
+  # ── 本地相册对象存储（MinIO，S3 兼容）──
+  minio:
+    image: docker.m.daocloud.io/minio/minio:latest
+    container_name: warmcore-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-warmcore}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-warmcore-local}
+    volumes:
+      - warmcore-minio-data:/data
+    restart: unless-stopped
+
+  # ── Caddy 反向代理（入口 8080：/bind 向导、/admin 家庭后台、公共 API；443：数字人调试）──
+  caddy:
+    image: docker.m.daocloud.io/library/caddy:2.7-alpine
+    container_name: warmcore-caddy
+    ports:
+      - "8080:8080"
+      # 数字人 HTTPS 调试入口（install.sh 已生成自签证书；不装数字人可删掉 443 映射）
+      - "443:443"
+    environment:
+      - DIGITAL_HUMAN_ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-localhost}
+    volumes:
+      - ./Caddyfile.private:/etc/caddy/Caddyfile:ro
+      - ./data/digital-human/certs:/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+      - admin_server
+
+  # ── 数字人生成服务（LivePortrait 照片→说话循环视频，GPU；镜像只含代码不含模型）──
+  digital-human:
+    image: ${WARMCORE_REGISTRY:-ghcr.io/zhouyevip}/warmcore-digital-human:${WARMCORE_VERSION:-latest}
+    container_name: warmcore-digital-human
+    profiles: ["digital-human"]
+    environment:
+      - DH_TOKEN=${DIGITAL_HUMAN_TOKEN:-}
+      - DH_TEMPLATES_DIR=/data/templates
+    volumes:
+      # 动作模板与 LivePortrait 权重按 deploy.md 准备后放入 ./data/digital-human/
+      - ./data/digital-human/templates:/data/templates
+      - ./data/digital-human/liveportrait:/data/models
+    expose:
+      - "50000"
+    ports:
+      # 外网数字人媒体经云端隧道回来（DH_MEDIA），需发布到宿主机
+      - "50000:50000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ══ 以下为进阶 GPU 栈（--profile digital-human-gpu 启用）══
+  # 镜像来自参考包（docker-ai-gf-s2s / docker-ai-gf-avatar，含本地缓存模型），
+  # 且依赖 ./data/digital-human/ 下的参考包数据与补丁文件——
+  # 完整准备步骤见 docs/私有部署-镜像安装指南.md「数字人进阶」一节，未备齐勿启用。
+
+  # ── 贾维斯数字人 · 语音后端（s2s：VAD打断 + ASR + TTS 声音克隆）──
+  jarvis-s2s:
+    image: ${S2S_IMAGE:-docker-ai-gf-s2s:latest}
+    container_name: warmcore-jarvis-s2s
+    profiles: ["digital-human-gpu"]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      # LLM 走 app 内的代理：后台「大模型来源」切换 本地 ollama ↔ 云端 API 即时生效
+      - LLM_BASE_URL=http://app:8000/api/dh/llm/v1
+      - LLM_NAME=${S2S_LLM_NAME:-qwen3:8b}
+      - STT_MODEL=${S2S_STT_MODEL:-medium}
+      - S2S_NUM_PIPELINES=${S2S_NUM_PIPELINES:-1}
+      - MIN_SILENCE_MS=${S2S_MIN_SILENCE_MS:-1200}
+      - VAD_THRESH=${S2S_VAD_THRESH:-0.6}
+      - MIN_SPEECH_MS=${S2S_MIN_SPEECH_MS:-500}
+      - TTS_MODEL=${S2S_TTS_MODEL:-Qwen/Qwen3-TTS-12Hz-0.6B-Base}
+      - REF_TEXT=${S2S_REF_TEXT:-靠杯了，你终于上线了，我既开心又有点怨你，嗯；小雅一个人在这里等你，等的都快委屈死了！}
+      - ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-localhost}
+      - HF_HOME=/hf-cache
+      - HF_ENDPOINT=https://hf-mirror.com
+      - HF_HUB_DISABLE_XET=1
+      - PYTHONUNBUFFERED=1
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+    volumes:
+      - ./data/digital-human/ref:/data/ref
+      - ./data/digital-human/hf-cache:/hf-cache
+      - ./data/digital-human/torch-cache:/root/.cache/torch
+      - ./data/digital-human/s2s-entrypoint.sh:/entrypoint-wc.sh:ro
+      - ./data/digital-human/avatar-sync.js:/app/frontend/avatar-sync.js:ro
+      - ./data/digital-human/websocket_router.py:/opt/venv/lib/python3.10/site-packages/speech_to_speech/api/openai_realtime/websocket_router.py:ro
+      - ./data/digital-human/vad_handler.py:/opt/venv/lib/python3.10/site-packages/speech_to_speech/VAD/vad_handler.py:ro
+    entrypoint: ["/bin/bash", "/entrypoint-wc.sh"]
+    expose:
+      - "7860"
+      - "8765"
+    ports:
+      - "7860:7860"
+    restart: unless-stopped
+    depends_on:
+      - app
+
+  # ── 贾维斯数字人运行时（LiveTalking/Wav2Lip 口型同步，GPU 容器）──
+  jarvis-digital-human:
+    image: ${DIGITAL_HUMAN_IMAGE:-docker-ai-gf-avatar:latest}
+    container_name: warmcore-jarvis-digital-human
+    profiles: ["digital-human-gpu"]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+      - ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-127.0.0.1}
+      - DH_TOKEN=${DIGITAL_HUMAN_TOKEN:-}
+      - AUTO_DOWNLOAD_AVATAR_MODEL=false
+      - AVATAR_ID=wav2lip256_myavatar
+      - SERVER_SIDE_TURN_ENABLED=false
+      - TURN_URL=${TURN_URL:-}
+      - TURN_USERNAME=${TURN_USERNAME:-}
+      - TURN_PASSWORD=${TURN_PASSWORD:-}
+    volumes:
+      - ${DIGITAL_HUMAN_MODELS_DIR:-./data/digital-human/models}:/app/models
+      - ${DIGITAL_HUMAN_AVATARS_DIR:-./data/digital-human/avatars}:/app/data/avatars
+      - ./data/digital-human/patch_rtc_turn.py:/patch_rtc_turn.py:ro
+      - ./data/digital-human/lt_patched/routes.py:/app/server/routes.py:ro
+      - ./data/digital-human/lt_patched/rtc_manager.py:/app/server/rtc_manager.py:ro
+    expose:
+      - "8010"
+    ports:
+      # WebRTC ICE 媒体平面（手机直连；信令仍经主服务）
+      - "50000:50000/udp"
+    command: >
+      --transport webrtc --model wav2lip
+      --avatar_id wav2lip256_myavatar
+      --stun 'stun:stun.l.google.com:19302'
+      --max_session 10
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - app
+
+  # ── 在线自动更新代理（watchtower）：定时检查 GHCR 新镜像并重建业务容器 ──
+  # 一键更新链路：后台「检查更新」页按钮 → admin_server 触发本服务 /v1/update →
+  # watchtower 通过 docker.sock 拉新镜像并重建带 label 的容器。数据全在卷中不受影响。
+  auto-update:
+    image: docker.m.daocloud.io/containrrr/watchtower:latest
+    container_name: warmcore-auto-update
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 宿主机 docker login 凭据（Private 镜像拉取需要；install.sh 已生成）
+      - ${DOCKER_CONFIG_JSON:-/root/.docker/config.json}:/config.json:ro
+    command: >
+      --interval 3600
+      --http-api-update
+      --http-api-token ${WATCHTOWER_API_TOKEN:-warmcore-update}
+      --label-enable
+      --cleanup
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+volumes:
+  warmcore-app-data:
+  warmcore-mongo-data:
+  warmcore-minio-data:
+  caddy-data:
+  caddy-config:

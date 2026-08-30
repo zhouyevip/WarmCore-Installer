@@ -1,0 +1,6 @@
+{
+  "version": "0.0.0-dev",
+  "released_at": "",
+  "images": {},
+  "changelog": "种子文件：首次正式发版（git tag v1.0.0 && git push --tags）后由 CI 自动覆盖为真实版本清单"
+}

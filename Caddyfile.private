@@ -1,0 +1,104 @@
+# Chrome 对 IP 地址访问不发送 SNI，需指定默认 SNI 才能命中数字人证书
+{
+  default_sni {$DIGITAL_HUMAN_ADVERTISE_HOST}
+}
+
+# WarmCore 私人服务器（本地部署）Caddy 配置
+#
+# 形态（与云端完全区分）：
+#   - 云端主服务器 = 总管（账号/关系网权威/运营后台）
+#   - 私人服务器 = 自己的家：根路径 = 部署门户首页（未绑定=云账号登录/绑定码，
+#     已绑定=状态+进入家庭后台）；/admin 仍为家庭后台（admin-ui）；
+#     公共 API（相册/贾维斯/影视/本地服务管理）→ 主服务 app:8000；
+#     本地相册对象走 MinIO（/oss 代理）
+#     AI 对话/相册等隐私数据只存在本地 mongo
+http://:8080 {
+
+  # ── 健康检查 ──
+  handle /health {
+    reverse_proxy app:8000
+  }
+
+  # ── 部署门户：根首页与 /bind（主服务路由，同一页面） ──
+  handle /bind* {
+    reverse_proxy app:8000
+  }
+
+  # ── 家庭后台管理 API → admin_server ──
+  handle /api/admin/* {
+    reverse_proxy admin_server:8090
+  }
+  handle /api/family-admin/* {
+    reverse_proxy admin_server:8090
+  }
+  handle /api/family/admin/* {
+    reverse_proxy admin_server:8090
+  }
+
+  # ── 贾维斯数字人：语音 WS（s2s，App 直连 /dh-ws/v1/realtime）──
+  handle_path /dh-ws/* {
+    reverse_proxy jarvis-s2s:8765
+  }
+
+  # ── 贾维斯数字人：口型视频服务（LiveTalking offer/humanaudio/interrupt_talk）──
+  handle_path /lt/* {
+    reverse_proxy jarvis-digital-human:8010
+  }
+
+  # ── 本地 MinIO 对象代理（相册图片/视频） ──
+  handle_path /oss/* {
+    header Cache-Control "public, max-age=31536000, immutable"
+    reverse_proxy minio:9000
+  }
+
+  # ── 公共 API（APP 连接本地服）→ 主服务 ──
+  handle /api/* {
+    reverse_proxy app:8000
+  }
+
+  # ── 家庭后台入口（/admin 及子路径；子路径剥前缀，静态资源直落 admin_server 根）──
+  handle /admin {
+    reverse_proxy admin_server:8090
+  }
+  handle_path /admin/* {
+    reverse_proxy admin_server:8090
+  }
+  # 后台构建产物 base=/admin-dist/（index.html 内的绝对引用）
+  handle_path /admin-dist/* {
+    reverse_proxy admin_server:8090
+  }
+
+  # ── 兜底：根首页及其余路径 → 主服务（部署门户） ──
+  handle {
+    reverse_proxy app:8000
+  }
+}
+
+# ── 贾维斯数字人 · HTTPS 调试入口（自签证书：浏览器麦克风要求安全上下文）──
+# 浏览器完整体验（视频+口型+麦克风）: https://<宿主机IP>/dh-web/ （首次需信任自签证书）
+# 站点主机名取自 DIGITAL_HUMAN_ADVERTISE_HOST（与 WebRTC ICE 广播地址一致）
+https://{$DIGITAL_HUMAN_ADVERTISE_HOST}:443 {
+  # 显式自签证书（IP 站点；浏览器首次访问需手动信任）
+  tls /certs/dh-cert.pem /certs/dh-key.pem
+
+  handle_path /dh-ws/* {
+    reverse_proxy jarvis-s2s:8765
+  }
+
+  handle_path /lt/* {
+    reverse_proxy jarvis-digital-human:8010
+  }
+
+  handle_path /dh-web/* {
+    reverse_proxy jarvis-s2s:7860
+  }
+
+  # avatar-sync.js 以根路径绝对地址加载（patch_frontend 注入），需直通前端
+  handle /avatar-sync.js {
+    reverse_proxy jarvis-s2s:7860
+  }
+
+  handle {
+    respond "WarmCore 数字人 HTTPS 入口" 200
+  }
+}
