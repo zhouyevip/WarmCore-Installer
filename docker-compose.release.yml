@@ -206,11 +206,6 @@ services:
       - ./data/digital-human/ref:/data/ref
       - ./data/digital-human/hf-cache:/hf-cache
       - ./data/digital-human/torch-cache:/root/.cache/torch
-      - ./data/digital-human/s2s-entrypoint.sh:/entrypoint-wc.sh:ro
-      - ./data/digital-human/avatar-sync.js:/app/frontend/avatar-sync.js:ro
-      - ./data/digital-human/websocket_router.py:/opt/venv/lib/python3.10/site-packages/speech_to_speech/api/openai_realtime/websocket_router.py:ro
-      - ./data/digital-human/vad_handler.py:/opt/venv/lib/python3.10/site-packages/speech_to_speech/VAD/vad_handler.py:ro
-    entrypoint: ["/bin/bash", "/entrypoint-wc.sh"]
     expose:
       - "7860"
       - "8765"
@@ -239,9 +234,6 @@ services:
     volumes:
       - ${DIGITAL_HUMAN_MODELS_DIR:-./data/digital-human/models}:/app/models
       - ${DIGITAL_HUMAN_AVATARS_DIR:-./data/digital-human/avatars}:/app/data/avatars
-      - ./data/digital-human/patch_rtc_turn.py:/patch_rtc_turn.py:ro
-      - ./data/digital-human/lt_patched/routes.py:/app/server/routes.py:ro
-      - ./data/digital-human/lt_patched/rtc_manager.py:/app/server/rtc_manager.py:ro
     expose:
       - "8010"
     ports:

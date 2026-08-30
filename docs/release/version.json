@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.9",
+  "version": "v1.2.0",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.9",
-      "digest": "sha256:8827116a82affd5d73cbfa26295b321de6f8b6035091e2123a68faeae946137c"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.2.0",
+      "digest": "sha256:00f5595a4b5973e274a9932359f3995fc74eb2e97e5b1dc615445ba9235f8d32"
     }
   },
-  "changelog": "v1.1.9：健康检查识别容器重启并显示真实日志原因，避免不健康影视服务误报完成。"
+  "changelog": "v1.2.0：发布编排移除数字人源码绑定挂载，所有功能通过镜像与数据卷部署；健康检查显示真实失败原因。"
 }
