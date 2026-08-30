@@ -4,7 +4,19 @@
 
 ## 安装
 
+### Windows + Docker Desktop
+
+在 PowerShell 执行：
+
+```powershell
+irm https://raw.githubusercontent.com/zhouyevip/WarmCore-Installer/main/install.ps1 | iex
+```
+
+### Linux / macOS
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zhouyevip/WarmCore-Installer/main/install.sh -o install.sh
 bash install.sh
 ```
+
+安装完成后打开 `http://localhost:8080/`。手机扫码时使用电脑的局域网地址。
