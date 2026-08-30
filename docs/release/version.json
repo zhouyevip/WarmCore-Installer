@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.5",
+  "version": "v1.1.6",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.5",
-      "digest": "sha256:2b2fbb3b28cf2dfd501a6277f5d71f9660f5e0171a4902307f802d9af593f6b1"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.6",
+      "digest": "sha256:a4ff322be5cd25f7be3fb6b1ef34e93a2345c15d0a71a7eea46d4820d923f7ec"
     }
   },
-  "changelog": "v1.1.5：修正影视容器状态识别，部署完成后功能中心正确显示运行状态。"
+  "changelog": "v1.1.6：影视部署先检查宿主机本地 GPU 镜像，存在时直接创建容器，避免错误访问公共仓库。"
 }
