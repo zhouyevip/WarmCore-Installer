@@ -31,7 +31,7 @@ services:
     environment:
       - DEPLOY_MODE=private
       # 部署门户二维码使用手机可达的宿主局域网地址，不能写 127.0.0.1
-      - PRIVATE_SERVER_ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-127.0.0.1}
+      - PRIVATE_SERVER_ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-}
       - PRIVATE_SERVER_ADVERTISE_PORT=8080
       - FAMILY_ID=fam_default
       - FAMILY_NAME=${FAMILY_NAME:-我的家庭}
