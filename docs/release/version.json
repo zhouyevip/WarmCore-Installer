@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.8",
+  "version": "v1.1.9",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.8",
-      "digest": "sha256:fabef5db85b63fb7da5faaa13fc3a4e9813848a0fe8771db9667489fdd037215"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.9",
+      "digest": "sha256:8827116a82affd5d73cbfa26295b321de6f8b6035091e2123a68faeae946137c"
     }
   },
-  "changelog": "v1.1.8：修正数字人和影视端口配置，数字人使用 50000，影视使用 50001。"
+  "changelog": "v1.1.9：健康检查识别容器重启并显示真实日志原因，避免不健康影视服务误报完成。"
 }
