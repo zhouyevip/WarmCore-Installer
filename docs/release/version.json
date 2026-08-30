@@ -1,6 +1,11 @@
 {
-  "version": "0.0.0-dev",
-  "released_at": "",
-  "images": {},
-  "changelog": "种子文件：首次正式发版（git tag v1.0.0 && git push --tags）后由 CI 自动覆盖为真实版本清单"
+  "version": "v1.1.1",
+  "released_at": "2026-08-31",
+  "images": {
+    "warmcore-server": {
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.1",
+      "digest": "sha256:8250dddd7cd8fdaef9058459d541835711a3f22a225a59ebbbdabe9c71c6e281"
+    }
+  },
+  "changelog": "v1.1.1：功能中心与可选服务状态展示；基础版无 Ollama/MinIO 时不显示不可用入口；服务镜像改用 CPU Torch 构建。"
 }
