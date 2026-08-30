@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.7",
+  "version": "v1.1.8",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.7",
-      "digest": "sha256:af23e83377a297d76fc09dce442137465ba383b7e2012b7cb72840681f91b8d5"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.8",
+      "digest": "sha256:fabef5db85b63fb7da5faaa13fc3a4e9813848a0fe8771db9667489fdd037215"
     }
   },
-  "changelog": "v1.1.7：数字人与影视可同时安装，影视自动使用独立宿主机端口 50001。"
+  "changelog": "v1.1.8：修正数字人和影视端口配置，数字人使用 50000，影视使用 50001。"
 }
