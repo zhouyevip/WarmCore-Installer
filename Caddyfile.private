@@ -78,8 +78,8 @@ http://:8080 {
 # 浏览器完整体验（视频+口型+麦克风）: https://<宿主机IP>/dh-web/ （首次需信任自签证书）
 # 站点主机名取自 DIGITAL_HUMAN_ADVERTISE_HOST（与 WebRTC ICE 广播地址一致）
 https://{$DIGITAL_HUMAN_ADVERTISE_HOST}:443 {
-  # 显式自签证书（IP 站点；浏览器首次访问需手动信任）
-  tls /certs/dh-cert.pem /certs/dh-key.pem
+  # 使用 Caddy 内置 CA；证书状态持久化在 caddy-data 卷中
+  tls internal
 
   handle_path /dh-ws/* {
     reverse_proxy jarvis-s2s:8765

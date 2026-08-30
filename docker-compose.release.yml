@@ -5,6 +5,7 @@
 #   - 不内置 ollama 服务：模型由用户自备（宿主机 ollama 或独立容器），
 #     通过 OLLAMA_BASE_URL 指向，本项目不承载模型分发；
 #   - 数据全部在 named volume 与 ./data 目录，升级镜像不丢数据；
+#   - 基础版只启动 Agent/关系人所需服务；相册、数字人、影视按模块安装；
 #   - 数字人：digital-human（生成服务）在 digital-human profile；
 #     jarvis 语音+口型 GPU 栈（进阶，需参考包镜像与数据包）在 digital-human-gpu profile。
 #
@@ -43,14 +44,15 @@ services:
       # 模型不随镜像分发：ollama 由用户自备，此处只指地址
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - WARMCORE_VERSION=${WARMCORE_VERSION:-latest}
-      - MINIO_ENABLED=true
+      # 基础版不启动相册对象存储；安装 album 模块后改为 true
+      - MINIO_ENABLED=${MINIO_ENABLED:-0}
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-warmcore}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-warmcore-local}
       - MINIO_BUCKET=warmcore
       - MINIO_SECURE=false
       - MINIO_PUBLIC_URL=/oss
-      - STORAGE_BACKEND=minio
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
       # 数字人生成服务（GPU 机器/机器同网，可选；--profile digital-human 启用）
       - DIGITAL_HUMAN_ENABLED=${DIGITAL_HUMAN_ENABLED:-0}
       - DIGITAL_HUMAN_URL=${DIGITAL_HUMAN_URL:-}
@@ -115,6 +117,7 @@ services:
   minio:
     image: docker.m.daocloud.io/minio/minio:latest
     container_name: warmcore-minio
+    profiles: ["album"]
     command: server /data --console-address ":9001"
     environment:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-warmcore}
@@ -123,14 +126,12 @@ services:
       - warmcore-minio-data:/data
     restart: unless-stopped
 
-  # ── Caddy 反向代理（入口 8080：/bind 向导、/admin 家庭后台、公共 API；443：数字人调试）──
+  # ── Caddy 反向代理（基础版只占用 8080；HTTPS/443 在可选模块中启用）──
   caddy:
     image: docker.m.daocloud.io/library/caddy:2.7-alpine
     container_name: warmcore-caddy
     ports:
       - "8080:8080"
-      # 数字人 HTTPS 调试入口（install.sh 已生成自签证书；不装数字人可删掉 443 映射）
-      - "443:443"
     environment:
       - DIGITAL_HUMAN_ADVERTISE_HOST=${DIGITAL_HUMAN_ADVERTISE_HOST:-localhost}
     volumes:
@@ -264,6 +265,9 @@ services:
   auto-update:
     image: docker.m.daocloud.io/containrrr/watchtower:latest
     container_name: warmcore-auto-update
+    environment:
+      # Docker Desktop 新版要求 API >= 1.44；避免旧版 watchtower 协商到 1.25。
+      - DOCKER_API_VERSION=${DOCKER_API_VERSION:-1.44}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # 宿主机 docker login 凭据（Private 镜像拉取需要；install.sh 已生成）

@@ -24,3 +24,12 @@ bash install.sh
 安装完成后打开 `http://localhost:8080/`。手机扫码时使用电脑的局域网地址。
 
 从旧版源码部署迁移时，安装器固定使用 Compose 项目名 `warmcore`，会复用原有数据卷；只删除旧容器，不删除数据卷。
+
+基础版只启动 Agent 和关系人。其他模块按需安装：
+
+```powershell
+# 相册
+docker compose -f docker-compose.release.yml --profile album up -d
+# 数字人
+docker compose -f docker-compose.release.yml --profile digital-human up -d
+```
