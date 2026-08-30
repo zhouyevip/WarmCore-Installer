@@ -1,11 +1,11 @@
 {
-  "version": "v1.1.1",
+  "version": "v1.1.2",
   "released_at": "2026-08-31",
   "images": {
     "warmcore-server": {
-      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.1",
-      "digest": "sha256:8250dddd7cd8fdaef9058459d541835711a3f22a225a59ebbbdabe9c71c6e281"
+      "ref": "ghcr.io/zhouyevip/warmcore-server:v1.1.2",
+      "digest": "sha256:8a6ae0959e6638f16505aece7c3fa8ed7cadbdf4a586fceaa47723441b1bf3ac"
     }
   },
-  "changelog": "v1.1.1：功能中心与可选服务状态展示；基础版无 Ollama/MinIO 时不显示不可用入口；服务镜像改用 CPU Torch 构建。"
+  "changelog": "v1.1.2：后台服务器页新增立即更新按钮与更新日志；更新通过 Watchtower 拉取 GHCR 镜像并重建服务。"
 }
